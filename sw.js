@@ -1,7 +1,7 @@
 // Service worker de la coquille Cockpit.
 // Garde seulement la coquille (page, icônes) pour un démarrage instantané.
 // Le contenu de Cockpit (Google) n'est jamais mis en cache : il vient toujours en direct.
-const CACHE = 'cockpit-coquille-v1';
+const CACHE = 'cockpit-coquille-v2';
 const COQUILLE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './favicon.png'];
 
 self.addEventListener('install', e => {
