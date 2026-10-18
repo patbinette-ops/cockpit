@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "Cockpit",
+  "short_name": "Cockpit",
+  "description": "Poste de commandement personnel — État, Décisions, Idées, Jarvis.",
+  "lang": "fr-CA",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04070c",
+  "theme_color": "#04070c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Capter une idée", "short_name": "Idée", "url": "./?v=idees",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Décisions", "short_name": "Décisions", "url": "./?v=decisions",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Parler à Jarvis", "short_name": "Jarvis", "url": "./?v=claude",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ]
+}

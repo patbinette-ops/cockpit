@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<title>Cockpit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04070c">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{--bg:#04070c;--cyan:#00d4ff;--mute:#7ea6ba}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden}
+  /* Écran de lancement : visible jusqu'au chargement de Cockpit. */
+  #lancement{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+    background:radial-gradient(ellipse at 50% 40%,rgba(0,212,255,.18),transparent 60%),var(--bg);
+    transition:opacity .45s ease;z-index:2}
+  #lancement.fini{opacity:0;pointer-events:none}
+  .reacteur{width:84px;height:84px;border-radius:50%;border:2px solid rgba(0,212,255,.55);
+    background:radial-gradient(circle,#fff 0 11%,var(--cyan) 24%,rgba(0,212,255,.25) 46%,transparent 70%);
+    box-shadow:0 0 36px rgba(0,212,255,.6),inset 0 0 16px rgba(0,212,255,.6);animation:pouls 1.6s ease-in-out infinite}
+  @keyframes pouls{50%{box-shadow:0 0 56px rgba(0,212,255,.85),inset 0 0 22px rgba(0,212,255,.8);transform:scale(1.04)}}
+  .mot{font:600 13px/1 system-ui,sans-serif;letter-spacing:.42em;text-indent:.42em;color:var(--mute);text-transform:uppercase}
+  .aide{max-width:280px;text-align:center;font:400 13px/1.45 system-ui,sans-serif;color:var(--mute);opacity:0;transition:opacity .4s}
+  .aide.visible{opacity:1}
+  .aide a{color:var(--cyan)}
+  iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--bg);z-index:1}
+</style>
+</head>
+<body>
+<div id="lancement">
+  <div class="reacteur"></div>
+  <div class="mot">Cockpit</div>
+  <div class="aide" id="aide">Ça prend du temps…<br>Si rien ne s'affiche, <a id="direct" href="#">ouvre Cockpit directement</a> pour te reconnecter à Google.</div>
+</div>
+<script>
+  // Seule source de l'app : la web app Apps Script (accès réservé au compte du propriétaire).
+  const APP = 'https://script.google.com/macros/s/AKfycbzI0VaOtgQOfQQyDOyDWqbg3pBdzs1-cXBP_0ZOoA8NpTm9hIkooudYNaYHUThLFN16/exec';
+  const ONGLETS = ['etat', 'decisions', 'idees', 'claude'];
+
+  const v = new URLSearchParams(location.search).get('v');
+  const src = APP + (ONGLETS.indexOf(v) >= 0 ? '?v=' + v : '');
+  document.getElementById('direct').href = src;
+
+  const f = document.createElement('iframe');
+  f.src = src;
+  f.title = 'Cockpit';
+  f.allow = 'clipboard-write';
+  f.addEventListener('load', () => document.getElementById('lancement').classList.add('fini'));
+  document.body.appendChild(f);
+
+  // Après 12 s sans chargement, on propose l'ouverture directe (session Google expirée, réseau lent).
+  setTimeout(() => document.getElementById('aide').classList.add('visible'), 12000);
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* la coquille fonctionne sans */ });
+  }
+</script>
+</body>
+</html>
