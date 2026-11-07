@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<title>Cockpit Loïc</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04070c">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cockpit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Cockpit Loïc v0.1 — coquille de Karen (Petite roue). Aucune donnée ici : la page est publique.
+     Le code de jumelage est tapé une fois par Patrick sur l'iPhone de Loïc; il ne sert qu'à abonner l'appareil et à tester. -->
+<style>
+  :root{--fond:#04070c;--panneau:#071019;--bord:#1E3B4F;--accent:#4FD8FF;--texte:#E6F6FF;--doux:#8FB3C6;--ambre:#FFB547;--vert:#7CFFB2}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(120% 60% at 50% 0%,#0a2333 0%,var(--fond) 60%);color:var(--texte);
+    font:16px/1.45 -apple-system,system-ui,sans-serif;padding:calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 24px)}
+  .hud{font-family:Rajdhani,system-ui,sans-serif;letter-spacing:3px;text-transform:uppercase}
+  header .etiq{font-size:13px;color:var(--doux)}
+  header h1{margin:2px 0 0;font:700 44px/1 Rajdhani,system-ui,sans-serif;letter-spacing:6px;color:var(--texte)}
+  header .date{margin-top:6px;font-size:14px;color:var(--doux)}
+  .puce{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:6px 12px;border:1px solid var(--bord);border-radius:999px;font-size:12px;color:var(--accent)}
+  .puce i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .karen{display:flex;flex-direction:column;align-items:center;margin:34px 0 30px;text-decoration:none;color:var(--texte)}
+  .anneau{position:relative;width:190px;height:190px;border-radius:50%;display:grid;place-items:center;
+    border:2px solid var(--accent);box-shadow:0 0 40px rgba(79,216,255,.25),inset 0 0 40px rgba(79,216,255,.12)}
+  .anneau::before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px dashed rgba(79,216,255,.45);animation:tourne 18s linear infinite}
+  .anneau span{font:700 30px Rajdhani,system-ui,sans-serif;letter-spacing:6px}
+  .karen:active .anneau{transform:scale(.97);box-shadow:0 0 60px rgba(79,216,255,.45)}
+  .karen small{margin-top:14px;color:var(--doux);font-size:14px;text-align:center}
+  @keyframes tourne{to{transform:rotate(360deg)}}
+  section{border:1px solid var(--bord);border-radius:16px;background:var(--panneau);padding:16px;margin-bottom:14px}
+  section h2{margin:0 0 10px;font-size:13px;color:var(--doux);font-weight:600}
+  #etat{min-height:1.4em;margin:0 0 12px;font-size:15px}
+  #etat.ok{color:var(--vert)} #etat.att{color:var(--ambre)}
+  input{width:100%;padding:14px;margin:0 0 10px;border:1px solid var(--bord);border-radius:12px;background:#030a10;color:var(--texte);
+    font:600 22px Rajdhani,system-ui,sans-serif;letter-spacing:8px;text-align:center}
+  button{display:block;width:100%;padding:15px;margin:0 0 10px;border:1px solid var(--accent);border-radius:12px;
+    background:rgba(79,216,255,.12);color:var(--texte);font:600 17px Rajdhani,system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase}
+  button.second{border-color:var(--bord);background:transparent;color:var(--doux)}
+  button:disabled{opacity:.4}
+  .cache{display:none}
+  ol{margin:0;padding-left:20px;color:var(--texte)} ol li{margin:4px 0}
+  textarea{width:100%;height:110px;background:#030a10;color:var(--doux);border:1px solid var(--bord);border-radius:8px;font:11px/1.3 ui-monospace,monospace;padding:8px}
+  footer{margin-top:18px;text-align:center;font-size:11px;color:#4d6a7a}
+</style>
+</head>
+<body>
+<header>
+  <div class="etiq hud">Cockpit</div>
+  <h1>LOÏC</h1>
+  <div class="date hud" id="date"></div>
+  <div class="puce hud"><i></i>Karen · Petite roue</div>
+</header>
+
+<a class="karen" id="lancer" href="shortcuts://run-shortcut?name=Karen">
+  <div class="anneau"><span class="hud">KAREN</span></div>
+  <small>Une capture ou une dictée,<br>Karen la met dans ton agenda.</small>
+</a>
+
+<section id="installer" class="cache">
+  <h2 class="hud">Installer l'app</h2>
+  <ol>
+    <li>Ouvre cette page dans <b>Safari</b>.</li>
+    <li>Touche <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</li>
+    <li>Ouvre <b>Cockpit</b> depuis l'écran d'accueil, puis active les notifications.</li>
+  </ol>
+</section>
+
+<section id="notifs">
+  <h2 class="hud">Notifications</h2>
+  <div id="etat"></div>
+  <div id="jumelage">
+    <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="code">
+    <button id="activer">Activer</button>
+  </div>
+  <button id="tester" class="second" disabled>Tester</button>
+  <div id="secours" class="cache">
+    <textarea id="json" readonly></textarea>
+    <button id="copier" class="second">Copier l'abonnement</button>
+  </div>
+</section>
+
+<footer class="hud">Cockpit Loïc v0.1</footer>
+
+<script>
+// URL /exec du projet Apps Script « Karen » (posée après le déploiement de Karen).
+const KAREN_URL = '';
+
+const $ = id => document.getElementById(id);
+const etat = (t, c) => { $('etat').textContent = t; $('etat').className = c || ''; };
+const memo = { lire(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+               ecrire(k, v) { try { localStorage.setItem(k, v); } catch (_) {} } };
+
+const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+const auj = new Date(); $('date').textContent = jours[auj.getDay()] + ' ' + auj.getDate() + ' ' + mois[auj.getMonth()];
+
+function cleVersOctets(b64) {
+  const p = '='.repeat((4 - b64.length % 4) % 4);
+  const s = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(s, ch => ch.charCodeAt(0));
+}
+async function karen(corps) { // POST en text/plain : pas de requête préalable CORS vers Apps Script
+  const r = await fetch(KAREN_URL, { method: 'POST', body: JSON.stringify(corps) });
+  return r.json();
+}
+
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const installee = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const supporte = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+let reg = null, cle = null;
+
+if (ios && !installee) {
+  $('installer').classList.remove('cache'); $('notifs').classList.add('cache');
+} else if (!supporte) {
+  etat('Notifications non supportées ici (iPhone : iOS 16.4 ou plus, app installée).', 'att'); $('jumelage').classList.add('cache');
+} else if (!KAREN_URL) {
+  etat('Karen n\'est pas encore branchée.', 'att'); $('activer').disabled = true;
+} else {
+  navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready).then(async r => {
+    reg = r;
+    const s = await r.pushManager.getSubscription();
+    if (s && memo.lire('code')) { etat('Notifications actives.', 'ok'); $('jumelage').classList.add('cache'); $('tester').disabled = false; }
+    else etat('Entre le code, puis touche Activer.');
+  });
+  fetch(KAREN_URL + '?cle=1').then(r => r.json()).then(j => { cle = j.cle; }).catch(() => etat('Karen ne répond pas. Vérifie le réseau.', 'att'));
+}
+
+$('activer').onclick = async () => {
+  const code = $('code').value.trim();
+  if (!/^\d{6}$/.test(code)) return etat('Le code a 6 chiffres.', 'att');
+  if (!reg || !cle) return etat('Un instant, Karen se prépare. Réessaie.', 'att');
+  let sub;
+  try {
+    const vieux = await reg.pushManager.getSubscription();
+    if (vieux) await vieux.unsubscribe();
+    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(cle) });
+  } catch (e) { return etat('Permission refusée ou erreur : ' + e.message, 'att'); }
+  try {
+    const r = await karen({ action: 'abonner', code: code, abonnement: sub.toJSON() });
+    if (!r.ok) return etat(r.erreur || r.message || 'Refusé', 'att');
+    memo.ecrire('code', code);
+    etat('Notifications actives.', 'ok'); $('jumelage').classList.add('cache'); $('tester').disabled = false;
+  } catch (e) { // secours : l'abonnement existe, mais Karen ne l'a pas reçu
+    $('json').value = JSON.stringify(sub.toJSON()); $('secours').classList.remove('cache');
+    etat('Karen n\'a pas reçu l\'abonnement (' + e.message + '). Copie-le et envoie-le à ton père.', 'att');
+  }
+};
+
+$('tester').onclick = async () => {
+  $('tester').disabled = true;
+  try { const r = await karen({ action: 'tester', code: memo.lire('code') || '' }); etat(r.message || r.erreur || '', r.ok ? 'ok' : 'att'); }
+  catch (e) { etat('Karen ne répond pas : ' + e.message, 'att'); }
+  $('tester').disabled = false;
+};
+
+$('copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('json').value); etat('Copié.', 'ok'); }
+  catch (_) { $('json').select(); document.execCommand('copy'); etat('Copié.', 'ok'); }
+};
+</script>
+</body>
+</html>
