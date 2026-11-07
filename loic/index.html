@@ -114,7 +114,7 @@
   </div>
 </section>
 
-<footer class="hud">Cockpit Loïc v0.2</footer>
+<footer class="hud">Cockpit Loïc v0.2.1</footer>
 
 <script>
 // URL /exec du projet Apps Script « Karen » (posée après le déploiement de Karen).
@@ -223,8 +223,10 @@ $('go').onclick = async () => {
     ev = r.trouve ? r : null;
     $('ajouter').classList.toggle('cache', !ev);
     $('manque').classList.toggle('cache', !(ev && r.adresse_manque));
-    if (ev && r.adresse_manque) $('manqueTxt').textContent = 'Adresse de ' + (r.nom_carnet || r.lieu) + '? Karen s\'en souviendra.';
-    $('adresse').value = '';
+    $('adresse').value = (ev && r.adresse_suggeree) || '';
+    if (ev && r.adresse_manque) $('manqueTxt').textContent = r.adresse_suggeree
+      ? 'Adresse trouvée par Karen : vérifie-la ou corrige-la. Karen s\'en souviendra.'
+      : 'Adresse de ' + (r.nom_carnet || r.lieu) + '? Karen s\'en souviendra.';
   } catch (e) { $('etatLire').textContent = 'Karen : ' + e.message; }
   $('go').disabled = false;
 };
