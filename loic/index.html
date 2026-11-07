@@ -17,7 +17,7 @@
 <!-- Cockpit Loïc v0.3 — coquille de Karen. Page publique : aucune donnée ici.
      Sécurité (v0.3) : un code à usage unique (10 min, généré par Patrick) s'échange contre une clé d'appareil de 64 caractères,
      gardée dans l'app seulement. Toutes les actions passent par cette clé.
-     Gros bouton KAREN = conversation avec l'agent Karen (même moteur que Homer); 📅 RDV = Petite roue. -->
+     Gros bouton KAREN = conversation avec l'agent Karen (même moteur que Homer); RDV = Petite roue. -->
 <style>
   :root{--fond:#04070c;--panneau:#071019;--bord:#1E3B4F;--accent:#4FD8FF;--texte:#E6F6FF;--doux:#8FB3C6;--ambre:#FFB547;--vert:#7CFFB2;--rouge:#FF6B6B}
   *{box-sizing:border-box}
@@ -60,7 +60,13 @@
   pre#resume{white-space:pre-wrap;font:600 18px/1.4 -apple-system,system-ui,sans-serif;margin:0 0 12px}
   .petit{font-size:14px;color:var(--ambre);margin:0 0 6px}
   .retour{display:flex;align-items:center;gap:10px;margin:0 0 14px}
-  .retour button{width:auto;margin:0;padding:8px 14px}
+  .retour button{width:auto;margin:0;padding:8px 14px;white-space:nowrap;flex:none}
+  .trio{display:flex;gap:10px} .trio button{flex:1;padding:15px 4px}
+  .note{border-top:1px solid rgba(79,216,255,.12);padding:10px 2px}
+  .note .q{white-space:pre-wrap}
+  .note .m{color:var(--doux);font-size:12px;margin-top:4px;letter-spacing:.05em}
+  .note .m b{color:var(--accent);font-weight:600;text-transform:uppercase}
+  .note .r{margin-top:6px;padding:8px 10px;border-left:2px solid var(--accent);background:rgba(79,216,255,.06);border-radius:0 8px 8px 0;font-size:15px}
   footer{margin-top:18px;text-align:center;font-size:11px;color:#4d6a7a}
 
   /* ---------- Conversation Karen (façon Homer v5.4) ---------- */
@@ -142,7 +148,7 @@
       <div class="anneau"><span class="hud">KAREN</span></div>
       <small>Parle à Karen.</small>
     </button>
-    <button id="b-rdv" type="button">📅 Nouveau RDV</button>
+    <div class="trio"><button id="b-rdv" type="button">RDV</button><button id="b-idees" type="button">Idées</button><button id="b-labo" type="button">Labo</button></div>
 
     <section id="jumelage" class="carte cache">
       <h2 class="hud">Jumeler cet iPhone</h2>
@@ -157,14 +163,14 @@
       <div class="ligne2"><button id="n-activer" class="second" type="button">Activer</button><button id="n-tester" class="second" type="button">Tester</button></div>
     </section>
   </div>
-  <footer class="hud">Cockpit Loïc v0.3</footer>
+  <footer class="hud">Cockpit Loïc v0.4</footer>
 </div>
 
 <!-- ============ Nouveau RDV (Petite roue) ============ -->
 <div id="v-rdv" class="vue cache">
   <div class="retour"><button class="second" type="button" data-retour>‹ Retour</button><div class="hud" style="color:var(--doux);font-size:13px">Petite roue · nouveau RDV</div></div>
   <section class="carte">
-    <label class="bouton" for="photo">📸 Choisir une capture</label>
+    <label class="bouton" for="photo">Choisir une capture</label>
     <input id="photo" type="file" accept="image/*" class="cache">
     <div id="apercu" class="cache"><img id="img" alt=""><button id="enlever" class="second" type="button">Enlever la capture</button></div>
     <textarea id="texte" class="saisie" placeholder="Ou écris-le ici (🎤 du clavier pour dicter) : party chez Max samedi 20 h"></textarea>
@@ -175,10 +181,32 @@
         <div class="petit" id="manqueTxt"></div>
         <input id="adresse" class="adr" placeholder="Adresse (optionnel)">
       </div>
-      <a id="ajouter" class="bouton" href="#">📅 Ajouter à mon calendrier</a>
+      <a id="ajouter" class="bouton" href="#">Ajouter à mon calendrier</a>
       <button id="autre" class="second" type="button">Un autre RDV</button>
     </div>
     <div id="etatLire" class="etat att"></div>
+  </section>
+</div>
+
+<!-- ============ Idées (à lui) ============ -->
+<div id="v-idees" class="vue cache">
+  <div class="retour"><button class="second" type="button" data-retour>‹ Retour</button><div class="hud" style="color:var(--doux);font-size:13px">Mes idées</div></div>
+  <section class="carte">
+    <textarea id="i-texte" class="saisie" placeholder="Une idée? Écris-la ou dicte-la (micro du clavier)."></textarea>
+    <button id="i-go" type="button">Garder l'idée</button>
+    <div id="i-etat" class="etat"></div>
+    <div id="i-liste"></div>
+  </section>
+</div>
+
+<!-- ============ Labo (feedback sur l'app) ============ -->
+<div id="v-labo" class="vue cache">
+  <div class="retour"><button class="second" type="button" data-retour>‹ Retour</button><div class="hud" style="color:var(--doux);font-size:13px">Labo · améliorer Cockpit</div></div>
+  <section class="carte">
+    <textarea id="l-texte" class="saisie" placeholder="Quelque chose marche mal? Tu voudrais un nouveau bouton? Dis-le à Karen."></textarea>
+    <button id="l-go" type="button">Envoyer au Labo</button>
+    <div id="l-etat" class="etat"></div>
+    <div id="l-liste"></div>
   </section>
 </div>
 
@@ -228,14 +256,38 @@ async function karen(corps) {
 
 /* ---------- Navigation ---------- */
 function vue(nom) {
-  ['accueil', 'rdv', 'chat'].forEach(v => $('v-' + v).classList.toggle('cache', v !== nom));
+  ['accueil', 'rdv', 'chat', 'idees', 'labo'].forEach(v => $('v-' + v).classList.toggle('cache', v !== nom));
   window.scrollTo(0, 0);
   if (nom === 'chat') { rendre(); taille(); }
+  if (nom === 'idees') notes('idees');
+  if (nom === 'labo') notes('labo');
 }
 document.querySelectorAll('[data-retour]').forEach(b => b.onclick = () => vue('accueil'));
 const jumele = () => !!memo.lire('appareil');
 $('b-karen').onclick = () => jumele() ? vue('chat') : $('jumelage').scrollIntoView({ behavior: 'smooth' });
-$('b-rdv').onclick = () => jumele() ? vue('rdv') : $('jumelage').scrollIntoView({ behavior: 'smooth' });
+['rdv', 'idees', 'labo'].forEach(v => { $('b-' + v).onclick = () => jumele() ? vue(v) : $('jumelage').scrollIntoView({ behavior: 'smooth' }); });
+
+/* ---------- Idées et Labo ---------- */
+const NOTES = { idees: { ajout: 'idee_ajouter', liste: 'idees', p: 'i' }, labo: { ajout: 'labo_ajouter', liste: 'labo', p: 'l' } };
+function rendreNotes(quoi, l) {
+  const n = NOTES[quoi];
+  $(n.p + '-liste').innerHTML = (l || []).map(x => '<div class="note"><div class="q">' + esc(x.texte) + '</div><div class="m">' + esc(x.date)
+    + (quoi === 'labo' ? ' · <b>' + esc(x.statut) + '</b>' : '') + '</div>'
+    + (x.reponse ? '<div class="r"><span class="hud" style="font-size:11px;color:var(--accent)">Karen</span><br>' + esc(x.reponse) + '</div>' : '') + '</div>').join('')
+    || '<div class="m" style="color:var(--doux)">' + (quoi === 'labo' ? 'Rien encore. Karen répond à chaque message, normalement en moins d\'une heure.' : 'Aucune idée encore.') + '</div>';
+}
+async function notes(quoi, texte) {
+  const n = NOTES[quoi];
+  try {
+    const r = await karen(texte ? { action: n.ajout, texte: texte } : { action: n.liste });
+    if (!r.ok) throw new Error(r.erreur);
+    rendreNotes(quoi, r.liste);
+    if (texte) { $(n.p + '-texte').value = ''; etat(n.p + '-etat', quoi === 'labo' ? 'Envoyé. Karen te répond ici.' : 'Gardée.', 'ok'); }
+  } catch (e) { etat(n.p + '-etat', 'Karen : ' + e.message, 'att'); }
+}
+Object.keys(NOTES).forEach(q => { const n = NOTES[q]; $(n.p + '-go').onclick = async () => {
+  const t = $(n.p + '-texte').value.trim(); if (!t) return;
+  $(n.p + '-go').disabled = true; await notes(q, t); $(n.p + '-go').disabled = false; }; });
 
 /* ---------- Installation, jumelage, notifications ---------- */
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
@@ -299,7 +351,7 @@ $('n-tester').onclick = async () => {
   $('n-tester').disabled = false;
 };
 
-/* ---------- 📅 RDV : Petite roue lit la capture ou le texte, puis .ics pour le calendrier ---------- */
+/* ---------- RDV : Petite roue lit la capture ou le texte, puis .ics pour le calendrier ---------- */
 let image = null, ev = null;
 function reduire(fichier, max, q) {
   return new Promise((ok, ko) => {
@@ -406,7 +458,7 @@ function grandir() {
   x.style.height = Math.min(h, max) + 'px'; x.style.overflowY = h > max ? 'auto' : 'hidden';
   taille();
 }
-const libPj = p => p.mt === 'application/pdf' ? '📎 ' + p.nom : '📎 photo';
+const libPj = p => p.mt === 'application/pdf' ? '[PDF] ' + p.nom : '[photo]';
 async function envoyer(texte, pieces) {
   const t = String(texte || '').trim(), pj = (pieces || []).slice();
   if ((!t && !pj.length) || CH.occupe) return;
@@ -456,7 +508,7 @@ async function envoyer(texte, pieces) {
 function rendrePj() {
   const b = $('ch-pj');
   b.classList.toggle('cache', !CH.pj.length && !CH.pjPrep && !CH.pjMsg);
-  b.innerHTML = CH.pj.map((p, i) => '<div class="vign">' + (p.mt === 'application/pdf' ? '📄<br>' + esc(p.nom.slice(0, 20))
+  b.innerHTML = CH.pj.map((p, i) => '<div class="vign">' + (p.mt === 'application/pdf' ? 'PDF<br>' + esc(p.nom.slice(0, 20))
       : '<img alt="" src="data:' + esc(p.mt) + ';base64,' + p.data + '">') + '<button type="button" data-pjx="' + i + '" aria-label="Retirer">×</button></div>').join('')
     + (CH.pjPrep ? '<div class="vign">…</div>' : '') + (CH.pjMsg ? '<span id="ch-pj-msg">' + esc(CH.pjMsg) + '</span>' : '');
   $('ch-env').disabled = CH.occupe || CH.pjPrep > 0;
