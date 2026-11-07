@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Cockpit Loïc</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#04070c">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,20 +14,25 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<!-- Cockpit Loïc v0.1 — coquille de Karen (Petite roue). Aucune donnée ici : la page est publique.
-     Le code de jumelage est tapé une fois par Patrick sur l'iPhone de Loïc; il ne sert qu'à abonner l'appareil et à tester. -->
+<!-- Cockpit Loïc v0.3 — coquille de Karen. Page publique : aucune donnée ici.
+     Sécurité (v0.3) : un code à usage unique (10 min, généré par Patrick) s'échange contre une clé d'appareil de 64 caractères,
+     gardée dans l'app seulement. Toutes les actions passent par cette clé.
+     Gros bouton KAREN = conversation avec l'agent Karen (même moteur que Homer); 📅 RDV = Petite roue. -->
 <style>
-  :root{--fond:#04070c;--panneau:#071019;--bord:#1E3B4F;--accent:#4FD8FF;--texte:#E6F6FF;--doux:#8FB3C6;--ambre:#FFB547;--vert:#7CFFB2}
+  :root{--fond:#04070c;--panneau:#071019;--bord:#1E3B4F;--accent:#4FD8FF;--texte:#E6F6FF;--doux:#8FB3C6;--ambre:#FFB547;--vert:#7CFFB2;--rouge:#FF6B6B}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:radial-gradient(120% 60% at 50% 0%,#0a2333 0%,var(--fond) 60%);color:var(--texte);
-    font:16px/1.45 -apple-system,system-ui,sans-serif;padding:calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 24px)}
+  html,body{margin:0}
+  body{min-height:100vh;background:radial-gradient(120% 60% at 50% 0%,#0a2333 0%,var(--fond) 60%) fixed;color:var(--texte);
+    font:16px/1.45 -apple-system,system-ui,sans-serif}
+  .vue{padding:calc(env(safe-area-inset-top) + 18px) 20px calc(env(safe-area-inset-bottom) + 24px)}
+  .cache{display:none !important}
   .hud{font-family:Rajdhani,system-ui,sans-serif;letter-spacing:3px;text-transform:uppercase}
   header .etiq{font-size:13px;color:var(--doux)}
-  header h1{margin:2px 0 0;font:700 44px/1 Rajdhani,system-ui,sans-serif;letter-spacing:6px;color:var(--texte)}
+  header h1{margin:2px 0 0;font:700 44px/1 Rajdhani,system-ui,sans-serif;letter-spacing:6px}
   header .date{margin-top:6px;font-size:14px;color:var(--doux)}
   .puce{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:6px 12px;border:1px solid var(--bord);border-radius:999px;font-size:12px;color:var(--accent)}
   .puce i{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-  .karen{display:flex;flex-direction:column;align-items:center;margin:34px 0 30px;text-decoration:none;color:var(--texte)}
+  .karen{display:flex;flex-direction:column;align-items:center;margin:34px 0 22px;background:none;border:0;color:var(--texte);width:100%;padding:0}
   .anneau{position:relative;width:190px;height:190px;border-radius:50%;display:grid;place-items:center;
     border:2px solid var(--accent);box-shadow:0 0 40px rgba(79,216,255,.25),inset 0 0 40px rgba(79,216,255,.12)}
   .anneau::before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px dashed rgba(79,216,255,.45);animation:tourne 18s linear infinite}
@@ -35,178 +40,279 @@
   .karen:active .anneau{transform:scale(.97);box-shadow:0 0 60px rgba(79,216,255,.45)}
   .karen small{margin-top:14px;color:var(--doux);font-size:14px;text-align:center}
   @keyframes tourne{to{transform:rotate(360deg)}}
-  section{border:1px solid var(--bord);border-radius:16px;background:var(--panneau);padding:16px;margin-bottom:14px}
-  section h2{margin:0 0 10px;font-size:13px;color:var(--doux);font-weight:600}
-  #etat{min-height:1.4em;margin:0 0 12px;font-size:15px}
-  #etat.ok{color:var(--vert)} #etat.att{color:var(--ambre)}
-  input{width:100%;padding:14px;margin:0 0 10px;border:1px solid var(--bord);border-radius:12px;background:#030a10;color:var(--texte);
+  @keyframes pouls{50%{opacity:.35}}
+  section.carte{border:1px solid var(--bord);border-radius:16px;background:var(--panneau);padding:16px;margin-bottom:14px}
+  section.carte h2{margin:0 0 10px;font-size:13px;color:var(--doux);font-weight:600}
+  .etat{min-height:1.2em;margin:0 0 10px;font-size:15px}
+  .etat.ok{color:var(--vert)} .etat.att{color:var(--ambre)}
+  input.code{width:100%;padding:14px;margin:0 0 10px;border:1px solid var(--bord);border-radius:12px;background:#030a10;color:var(--texte);
     font:600 22px Rajdhani,system-ui,sans-serif;letter-spacing:8px;text-align:center}
-  button{display:block;width:100%;padding:15px;margin:0 0 10px;border:1px solid var(--accent);border-radius:12px;
+  button,.bouton{display:block;width:100%;text-align:center;text-decoration:none;padding:15px;margin:0 0 10px;border:1px solid var(--accent);border-radius:12px;
     background:rgba(79,216,255,.12);color:var(--texte);font:600 17px Rajdhani,system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase}
   button.second{border-color:var(--bord);background:transparent;color:var(--doux)}
   button:disabled{opacity:.4}
-  .cache{display:none}
-  ol{margin:0;padding-left:20px;color:var(--texte)} ol li{margin:4px 0}
-  textarea{width:100%;height:110px;background:#030a10;color:var(--doux);border:1px solid var(--bord);border-radius:8px;font:11px/1.3 ui-monospace,monospace;padding:8px}
-  .bouton{display:block;text-align:center;text-decoration:none;padding:15px;margin:0 0 10px;border:1px solid var(--accent);border-radius:12px;
-    background:rgba(79,216,255,.12);color:var(--texte);font:600 17px Rajdhani,system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase}
-  textarea.saisie{height:90px;font:16px/1.4 -apple-system,system-ui,sans-serif;color:var(--texte);margin:0 0 10px}
-  input.adr{font:16px -apple-system,system-ui,sans-serif;letter-spacing:0;text-align:left}
+  .ligne2{display:flex;gap:10px} .ligne2>*{flex:1}
+  ol{margin:0;padding-left:20px} ol li{margin:4px 0}
+  textarea.saisie{width:100%;height:90px;background:#030a10;border:1px solid var(--bord);border-radius:12px;padding:10px;
+    font:16px/1.4 -apple-system,system-ui,sans-serif;color:var(--texte);margin:0 0 10px}
+  input.adr{width:100%;padding:12px;margin:0 0 10px;border:1px solid var(--bord);border-radius:12px;background:#030a10;color:var(--texte);font:16px -apple-system,system-ui,sans-serif}
   #apercu img{display:block;max-width:100%;max-height:220px;margin:0 auto 10px;border-radius:8px}
-  pre#resume{white-space:pre-wrap;font:600 18px/1.4 -apple-system,system-ui,sans-serif;margin:0 0 12px;color:var(--texte)}
+  pre#resume{white-space:pre-wrap;font:600 18px/1.4 -apple-system,system-ui,sans-serif;margin:0 0 12px}
   .petit{font-size:14px;color:var(--ambre);margin:0 0 6px}
-  #etatLire{min-height:1.2em;font-size:15px;color:var(--ambre)}
+  .retour{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+  .retour button{width:auto;margin:0;padding:8px 14px}
   footer{margin-top:18px;text-align:center;font-size:11px;color:#4d6a7a}
+
+  /* ---------- Conversation Karen (façon Homer v5.4) ---------- */
+  #v-chat{padding:0}
+  #ch-barre{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:6px;padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;
+    background:rgba(4,7,12,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--bord)}
+  #ch-titre{flex:1;text-align:center;font:700 16px Rajdhani,system-ui,sans-serif;letter-spacing:.35em;text-shadow:0 0 12px rgba(79,216,255,.6)}
+  .ico{width:44px;height:40px;margin:0;padding:0;border:1px solid transparent;background:none;color:var(--texte);font:400 20px system-ui;letter-spacing:0;border-radius:10px}
+  .ico:active,.ico.on{background:rgba(79,216,255,.12);border-color:var(--bord)}
+  #ch-tiroir{margin:10px;background:var(--panneau);border:1px solid var(--bord);border-radius:12px;padding:6px}
+  #ch-tiroir .t{color:var(--doux);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:6px 8px}
+  #ch-liste button{display:block;width:100%;margin:0;text-align:left;background:none;border:0;border-top:1px solid rgba(79,216,255,.1);border-radius:0;
+    color:var(--texte);padding:11px 8px;font:500 15px/1.3 -apple-system,system-ui,sans-serif;letter-spacing:0;text-transform:none}
+  #ch-liste button.on{color:var(--accent)}
+  #ch-liste small{display:block;color:var(--doux);font-size:11px}
+  #ch-fil{padding:8px 16px calc(var(--saisie,80px) + 16px)}
+  .vide{text-align:center;padding:40px 6px 10px}
+  .vide .mini{width:90px;height:90px;margin:0 auto 16px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 30px rgba(79,216,255,.3);display:grid;place-items:center;font:700 14px Rajdhani,system-ui;letter-spacing:3px}
+  .vide h2{font:600 20px -apple-system,system-ui,sans-serif;margin:0 0 4px}
+  .vide p{color:var(--doux);margin:0 0 18px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .chips button{width:auto;margin:0;padding:9px 14px;border-radius:999px;border-color:var(--bord);background:rgba(79,216,255,.06);font:500 14px -apple-system,system-ui,sans-serif;letter-spacing:0;text-transform:none}
+  .moi{margin:18px 0 10px 18%;background:rgba(79,216,255,.1);border:1px solid rgba(79,216,255,.18);border-radius:16px 16px 4px 16px;padding:10px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .lui{margin:8px 0 6px;line-height:1.55;overflow-wrap:anywhere}
+  .lui p{margin:0 0 10px}
+  .lui h3,.lui h4{font:700 16px -apple-system,system-ui,sans-serif;margin:14px 0 6px}
+  .lui ul,.lui ol{margin:0 0 10px;padding-left:22px} .lui li{margin:3px 0}
+  .lui code{background:rgba(255,255,255,.07);border-radius:4px;padding:1px 5px;font:13px ui-monospace,monospace}
+  .lui pre{background:rgba(0,0,0,.35);border:1px solid var(--bord);border-radius:8px;padding:10px;overflow-x:auto;margin:0 0 10px}
+  .lui pre code{background:none;padding:0}
+  .lui .tab{overflow-x:auto;margin:0 0 10px}
+  .lui table{border-collapse:collapse;font-size:14px;min-width:100%}
+  .lui th,.lui td{border:1px solid rgba(79,216,255,.18);padding:6px 8px;text-align:left;vertical-align:top}
+  .lui th{background:rgba(79,216,255,.08)}
+  .lui a{color:var(--accent)}
+  .lui hr{border:0;border-top:1px solid var(--bord);margin:12px 0}
+  .act{display:inline-flex;align-items:center;gap:8px;color:var(--doux);font-size:14px;margin:6px 0}
+  .act::before{content:'';width:9px;height:9px;border-radius:50%;background:var(--ambre);box-shadow:0 0 10px var(--ambre);animation:pouls 1.2s ease-in-out infinite}
+  .cout{color:#4d6a7a;font-size:11px;margin:2px 0 4px}
+  .err{color:var(--rouge);margin:8px 0}
+  #ch-saisie{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;
+    padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);background:rgba(4,7,12,.96);border-top:1px solid var(--bord)}
+  #ch-texte{flex:1;min-width:0;resize:none;max-height:40vh;border:1px solid var(--bord);border-radius:20px;padding:11px 16px;background:#0b1e2c;
+    color:var(--texte);font:16px/1.35 -apple-system,system-ui,sans-serif;overflow-y:hidden}
+  #ch-texte:focus{outline:none;border-color:var(--accent)}
+  #ch-env,#ch-joindre{width:46px;height:46px;flex:none;margin:0;padding:0;border-radius:50%;letter-spacing:0}
+  #ch-env{border:0;background:var(--accent);color:#02131c;font:700 20px system-ui}
+  #ch-env:disabled{background:#3b5262;color:#0b1117;opacity:1}
+  #ch-joindre{border:1px solid var(--bord);background:#0b1e2c;color:var(--accent);font:600 24px system-ui}
+  #ch-pj{flex:1 0 100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .vign{position:relative;width:58px;height:58px;border:1px solid var(--bord);border-radius:10px;overflow:hidden;background:#0b1e2c;display:grid;place-items:center;font-size:11px;text-align:center}
+  .vign img{width:100%;height:100%;object-fit:cover}
+  .vign button{position:absolute;top:2px;right:2px;width:20px;height:20px;margin:0;padding:0;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;font:700 13px/20px system-ui;letter-spacing:0}
+  #ch-pj-msg{color:var(--ambre);font-size:12px}
 </style>
 </head>
 <body>
-<header>
-  <div class="etiq hud">Cockpit</div>
-  <h1>LOÏC</h1>
-  <div class="date hud" id="date"></div>
-  <div class="puce hud"><i></i>Karen · Petite roue</div>
-</header>
 
-<a class="karen" id="lancer" href="#lire">
-  <div class="anneau"><span class="hud">KAREN</span></div>
-  <small>Une capture ou une dictée,<br>Karen la met dans ton agenda.</small>
-</a>
+<!-- ============ Accueil ============ -->
+<div id="v-accueil" class="vue">
+  <header>
+    <div class="etiq hud">Cockpit</div>
+    <h1>LOÏC</h1>
+    <div class="date hud" id="date"></div>
+    <div class="puce hud"><i></i>Karen</div>
+  </header>
 
-<section id="lire" class="cache">
-  <h2 class="hud">Petite roue · nouveau RDV</h2>
-  <label class="bouton" for="photo">📸 Choisir une capture</label>
-  <input id="photo" type="file" accept="image/*" class="cache">
-  <div id="apercu" class="cache"><img id="img" alt=""><button id="enlever" class="second">Enlever la capture</button></div>
-  <textarea id="texte" class="saisie" placeholder="Ou écris-le ici (🎤 du clavier pour dicter) : party chez Max samedi 20 h"></textarea>
-  <button id="go">Lire</button>
-  <div id="resultat" class="cache">
-    <pre id="resume"></pre>
-    <div id="manque" class="cache">
-      <div class="petit" id="manqueTxt"></div>
-      <input id="adresse" class="adr" placeholder="Adresse (optionnel)">
+  <section id="installer" class="carte cache">
+    <h2 class="hud">Installer l'app</h2>
+    <ol>
+      <li>Ouvre cette page dans <b>Safari</b>.</li>
+      <li>Touche <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</li>
+      <li>Ouvre <b>Cockpit</b> depuis l'écran d'accueil.</li>
+    </ol>
+  </section>
+
+  <div id="app">
+    <button class="karen" id="b-karen" type="button">
+      <div class="anneau"><span class="hud">KAREN</span></div>
+      <small>Parle à Karen.</small>
+    </button>
+    <button id="b-rdv" type="button">📅 Nouveau RDV</button>
+
+    <section id="jumelage" class="carte cache">
+      <h2 class="hud">Jumeler cet iPhone</h2>
+      <div class="etat" id="j-etat">Ton père te donne un code (valable 10 min).</div>
+      <input id="j-code" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="code">
+      <button id="j-go" type="button">Jumeler</button>
+    </section>
+
+    <section id="notifs" class="carte cache">
+      <h2 class="hud">Notifications</h2>
+      <div class="etat" id="n-etat"></div>
+      <div class="ligne2"><button id="n-activer" class="second" type="button">Activer</button><button id="n-tester" class="second" type="button">Tester</button></div>
+    </section>
+  </div>
+  <footer class="hud">Cockpit Loïc v0.3</footer>
+</div>
+
+<!-- ============ Nouveau RDV (Petite roue) ============ -->
+<div id="v-rdv" class="vue cache">
+  <div class="retour"><button class="second" type="button" data-retour>‹ Retour</button><div class="hud" style="color:var(--doux);font-size:13px">Petite roue · nouveau RDV</div></div>
+  <section class="carte">
+    <label class="bouton" for="photo">📸 Choisir une capture</label>
+    <input id="photo" type="file" accept="image/*" class="cache">
+    <div id="apercu" class="cache"><img id="img" alt=""><button id="enlever" class="second" type="button">Enlever la capture</button></div>
+    <textarea id="texte" class="saisie" placeholder="Ou écris-le ici (🎤 du clavier pour dicter) : party chez Max samedi 20 h"></textarea>
+    <button id="go" type="button">Lire</button>
+    <div id="resultat" class="cache">
+      <pre id="resume"></pre>
+      <div id="manque" class="cache">
+        <div class="petit" id="manqueTxt"></div>
+        <input id="adresse" class="adr" placeholder="Adresse (optionnel)">
+      </div>
+      <a id="ajouter" class="bouton" href="#">📅 Ajouter à mon calendrier</a>
+      <button id="autre" class="second" type="button">Un autre RDV</button>
     </div>
-    <a id="ajouter" class="bouton" href="#">📅 Ajouter à mon calendrier</a>
-    <button id="autre" class="second">Un autre RDV</button>
-  </div>
-  <div id="etatLire"></div>
-</section>
+    <div id="etatLire" class="etat att"></div>
+  </section>
+</div>
 
-<section id="installer" class="cache">
-  <h2 class="hud">Installer l'app</h2>
-  <ol>
-    <li>Ouvre cette page dans <b>Safari</b>.</li>
-    <li>Touche <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</li>
-    <li>Ouvre <b>Cockpit</b> depuis l'écran d'accueil, puis active les notifications.</li>
-  </ol>
-</section>
-
-<section id="notifs">
-  <h2 class="hud">Notifications</h2>
-  <div id="etat"></div>
-  <div id="jumelage">
-    <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="code">
-    <button id="activer">Activer</button>
+<!-- ============ Conversation Karen ============ -->
+<div id="v-chat" class="cache">
+  <div id="ch-barre">
+    <button type="button" class="ico" data-retour aria-label="Retour">‹</button>
+    <button type="button" class="ico" id="ch-hist" aria-label="Conversations">☰</button>
+    <div id="ch-titre">KAREN</div>
+    <button type="button" class="ico" id="ch-neuf" aria-label="Nouvelle conversation">＋</button>
   </div>
-  <button id="tester" class="second" disabled>Tester</button>
-  <div id="secours" class="cache">
-    <textarea id="json" readonly></textarea>
-    <button id="copier" class="second">Copier l'abonnement</button>
-  </div>
-</section>
-
-<footer class="hud">Cockpit Loïc v0.2.1</footer>
+  <div id="ch-tiroir" class="cache"><div class="t">Conversations récentes</div><div id="ch-liste"></div></div>
+  <div id="ch-fil"></div>
+  <form id="ch-saisie" autocomplete="off">
+    <div id="ch-pj" class="cache"></div>
+    <button type="button" id="ch-joindre" aria-label="Joindre une photo">+</button>
+    <input type="file" id="ch-photo" accept="image/*,application/pdf" multiple class="cache">
+    <textarea id="ch-texte" rows="1" placeholder="Écris à Karen…"></textarea>
+    <button type="submit" id="ch-env" aria-label="Envoyer">↑</button>
+  </form>
+</div>
 
 <script>
-// URL /exec du projet Apps Script « Karen » (posée après le déploiement de Karen).
+// URL /exec du projet Apps Script « Karen » (déploiement fixe : l'URL ne change jamais).
 const KAREN_URL = 'https://script.google.com/macros/s/AKfycbzCudjZNaeHFvbcnpuehD-k5NRVJcMt2zQa1TSw9cyMnwYOBaL2ta40Z2GVc7P9NEomeg/exec';
 
 const $ = id => document.getElementById(id);
-const etat = (t, c) => { $('etat').textContent = t; $('etat').className = c || ''; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const memo = { lire(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
-               ecrire(k, v) { try { localStorage.setItem(k, v); } catch (_) {} } };
+               ecrire(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+               effacer(k) { try { localStorage.removeItem(k); } catch (_) {} } };
+const etat = (id, t, c) => { $(id).textContent = t || ''; $(id).className = 'etat ' + (c || ''); };
+const usd = n => (Number(n) || 0).toFixed(2).replace('.', ',') + ' $';
 
 const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 const mois = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const auj = new Date(); $('date').textContent = jours[auj.getDay()] + ' ' + auj.getDate() + ' ' + mois[auj.getMonth()];
 
+/** Appel à Karen : POST text/plain (pas de requête préalable CORS). La clé d'appareil part avec chaque appel. */
+async function karen(corps) {
+  const c = Object.assign({ appareil: memo.lire('appareil') || '' }, corps);
+  const r = await fetch(KAREN_URL, { method: 'POST', body: JSON.stringify(c) });
+  const j = await r.json();
+  if (!j.ok && /non jumelé/.test(j.erreur || '')) { memo.effacer('appareil'); majAccueil(); }
+  return j;
+}
+
+/* ---------- Navigation ---------- */
+function vue(nom) {
+  ['accueil', 'rdv', 'chat'].forEach(v => $('v-' + v).classList.toggle('cache', v !== nom));
+  window.scrollTo(0, 0);
+  if (nom === 'chat') { rendre(); taille(); }
+}
+document.querySelectorAll('[data-retour]').forEach(b => b.onclick = () => vue('accueil'));
+const jumele = () => !!memo.lire('appareil');
+$('b-karen').onclick = () => jumele() ? vue('chat') : $('jumelage').scrollIntoView({ behavior: 'smooth' });
+$('b-rdv').onclick = () => jumele() ? vue('rdv') : $('jumelage').scrollIntoView({ behavior: 'smooth' });
+
+/* ---------- Installation, jumelage, notifications ---------- */
+const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const installee = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+let reg = null, clePub = null;
+if (pushOk) {
+  navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready).then(r => { reg = r; majAccueil(); }).catch(() => {});
+  fetch(KAREN_URL + '?cle=1').then(r => r.json()).then(j => { clePub = j.cle; }).catch(() => {});
+}
 function cleVersOctets(b64) {
   const p = '='.repeat((4 - b64.length % 4) % 4);
   const s = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from(s, ch => ch.charCodeAt(0));
 }
-async function karen(corps) { // POST en text/plain : pas de requête préalable CORS vers Apps Script
-  const r = await fetch(KAREN_URL, { method: 'POST', body: JSON.stringify(corps) });
-  return r.json();
-}
-
-const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
-const installee = navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-const supporte = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-let reg = null, cle = null;
-
-if (ios && !installee) {
-  $('installer').classList.remove('cache'); $('notifs').classList.add('cache');
-} else if (!supporte) {
-  etat('Notifications non supportées ici (iPhone : iOS 16.4 ou plus, app installée).', 'att'); $('jumelage').classList.add('cache');
-} else if (!KAREN_URL) {
-  etat('Karen n\'est pas encore branchée.', 'att'); $('activer').disabled = true;
-} else {
-  navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready).then(async r => {
-    reg = r;
-    const s = await r.pushManager.getSubscription();
-    if (s && memo.lire('code')) { etat('Notifications actives.', 'ok'); $('jumelage').classList.add('cache'); $('tester').disabled = false; }
-    else etat('Entre le code, puis touche Activer.');
-  });
-  fetch(KAREN_URL + '?cle=1').then(r => r.json()).then(j => { cle = j.cle; }).catch(() => etat('Karen ne répond pas. Vérifie le réseau.', 'att'));
-}
-
-$('activer').onclick = async () => {
-  const code = $('code').value.trim();
-  if (!/^\d{6}$/.test(code)) return etat('Le code a 6 chiffres.', 'att');
-  if (!reg || !cle) return etat('Un instant, Karen se prépare. Réessaie.', 'att');
-  let sub;
+async function abonnement() { // demande la permission : doit partir d'un toucher
+  if (!reg || !clePub) return null;
   try {
     const vieux = await reg.pushManager.getSubscription();
     if (vieux) await vieux.unsubscribe();
-    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(cle) });
-  } catch (e) { return etat('Permission refusée ou erreur : ' + e.message, 'att'); }
-  try {
-    const r = await karen({ action: 'abonner', code: code, abonnement: sub.toJSON() });
-    if (!r.ok) return etat(r.erreur || r.message || 'Refusé', 'att');
-    memo.ecrire('code', code);
-    etat('Notifications actives.', 'ok'); $('jumelage').classList.add('cache'); $('tester').disabled = false;
-  } catch (e) { // secours : l'abonnement existe, mais Karen ne l'a pas reçu
-    $('json').value = JSON.stringify(sub.toJSON()); $('secours').classList.remove('cache');
-    etat('Karen n\'a pas reçu l\'abonnement (' + e.message + '). Copie-le et envoie-le à ton père.', 'att');
+    const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(clePub) });
+    return s.toJSON();
+  } catch (_) { return null; }
+}
+async function majAccueil() {
+  if (ios && !installee) { $('installer').classList.remove('cache'); $('app').classList.add('cache'); return; }
+  $('jumelage').classList.toggle('cache', jumele());
+  $('notifs').classList.toggle('cache', !jumele() || !pushOk);
+  if (jumele() && reg) {
+    const s = await reg.pushManager.getSubscription();
+    etat('n-etat', s ? 'Notifications actives.' : 'Notifications inactives.', s ? 'ok' : 'att');
+    $('n-activer').classList.toggle('cache', !!s);
   }
+}
+majAccueil();
+
+$('j-go').onclick = async () => {
+  const code = $('j-code').value.trim();
+  if (!/^\d{6}$/.test(code)) return etat('j-etat', 'Le code a 6 chiffres.', 'att');
+  $('j-go').disabled = true; etat('j-etat', 'Jumelage…');
+  const abo = await abonnement(); // même toucher : permission des notifications
+  try {
+    const r = await fetch(KAREN_URL, { method: 'POST', body: JSON.stringify({ action: 'jumeler', code: code, nom: ios ? 'iPhone' : 'appareil', abonnement: abo || undefined }) }).then(x => x.json());
+    if (!r.ok) throw new Error(r.erreur || 'Refusé');
+    memo.ecrire('appareil', r.cle); memo.effacer('code');
+    $('j-code').value = ''; etat('j-etat', '');
+    majAccueil();
+  } catch (e) { etat('j-etat', e.message, 'att'); }
+  $('j-go').disabled = false;
+};
+$('n-activer').onclick = async () => {
+  const abo = await abonnement();
+  if (!abo) return etat('n-etat', 'Permission refusée. Réglages › Notifications › Cockpit.', 'att');
+  try { const r = await karen({ action: 'abonner', abonnement: abo }); etat('n-etat', r.message || r.erreur, r.ok ? 'ok' : 'att'); majAccueil(); }
+  catch (e) { etat('n-etat', 'Karen ne répond pas : ' + e.message, 'att'); }
+};
+$('n-tester').onclick = async () => {
+  $('n-tester').disabled = true;
+  try { const r = await karen({ action: 'tester' }); etat('n-etat', r.message || r.erreur, r.ok ? 'ok' : 'att'); }
+  catch (e) { etat('n-etat', 'Karen ne répond pas : ' + e.message, 'att'); }
+  $('n-tester').disabled = false;
 };
 
-$('tester').onclick = async () => {
-  $('tester').disabled = true;
-  try { const r = await karen({ action: 'tester', code: memo.lire('code') || '' }); etat(r.message || r.erreur || '', r.ok ? 'ok' : 'att'); }
-  catch (e) { etat('Karen ne répond pas : ' + e.message, 'att'); }
-  $('tester').disabled = false;
-};
-
-/* ---------- v0.2 : Petite roue lit la capture ou le texte, puis .ics pour le calendrier (plus de raccourci iOS) ---------- */
+/* ---------- 📅 RDV : Petite roue lit la capture ou le texte, puis .ics pour le calendrier ---------- */
 let image = null, ev = null;
-$('lancer').onclick = e => {
-  e.preventDefault();
-  if (!memo.lire('code')) { etat('Active d\'abord les notifications avec le code : il sert aussi de clé pour Karen.', 'att'); $('notifs').scrollIntoView(); return; }
-  $('lire').classList.remove('cache'); $('lire').scrollIntoView({ behavior: 'smooth' });
-};
-function reduire(fichier) { // JPEG 1200 px max : léger à envoyer, assez net pour lire un Snap
+function reduire(fichier, max, q) {
   return new Promise((ok, ko) => {
     const u = URL.createObjectURL(fichier), im = new Image();
-    im.onload = () => { const r = Math.min(1, 1200 / Math.max(im.width, im.height)); const c = document.createElement('canvas');
+    im.onload = () => { const r = Math.min(1, max / Math.max(im.width, im.height)); const c = document.createElement('canvas');
       c.width = Math.round(im.width * r); c.height = Math.round(im.height * r); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.8)); };
+      URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', q)); };
     im.onerror = () => ko(new Error('Image illisible')); im.src = u;
   });
 }
 $('photo').onchange = async () => {
   const f = $('photo').files[0]; if (!f) return;
-  try { image = await reduire(f); $('img').src = image; $('apercu').classList.remove('cache'); $('etatLire').textContent = ''; }
+  try { image = await reduire(f, 1200, 0.8); $('img').src = image; $('apercu').classList.remove('cache'); $('etatLire').textContent = ''; }
   catch (e) { $('etatLire').textContent = e.message; }
 };
 $('enlever').onclick = () => { image = null; $('photo').value = ''; $('apercu').classList.add('cache'); };
@@ -215,8 +321,7 @@ $('go').onclick = async () => {
   if (!image && !texte) { $('etatLire').textContent = 'Choisis une capture ou écris quelque chose.'; return; }
   $('go').disabled = true; $('etatLire').textContent = 'Karen lit…'; $('resultat').classList.add('cache');
   try {
-    const corps = { code: memo.lire('code') || '' }; if (image) corps.image = image; else corps.texte = texte;
-    const r = await karen(corps);
+    const r = await karen(image ? { image: image } : { texte: texte });
     if (!r.ok) throw new Error(r.erreur || 'Erreur');
     $('etatLire').textContent = '';
     $('resume').textContent = r.resume; $('resultat').classList.remove('cache');
@@ -230,19 +335,192 @@ $('go').onclick = async () => {
   } catch (e) { $('etatLire').textContent = 'Karen : ' + e.message; }
   $('go').disabled = false;
 };
-$('ajouter').onclick = async e => {
+$('ajouter').onclick = e => {
   if (!ev) return e.preventDefault();
   const adr = $('adresse').value.trim();
-  if (ev.adresse_manque && adr.length >= 5) karen({ code: memo.lire('code') || '', action: 'carnet', nom: ev.nom_carnet || ev.lieu, adresse: adr }).catch(() => {});
+  if (ev.adresse_manque && adr.length >= 5) karen({ action: 'carnet', nom: ev.nom_carnet || ev.lieu, adresse: adr }).catch(() => {});
   const q = new URLSearchParams({ ics: '1', t: ev.titre, d: ev.debut, f: ev.fin, j: ev.journee ? '1' : '0', l: adr || ev.adresse || ev.lieu || '' });
-  $('ajouter').href = KAREN_URL + '?' + q.toString(); // le geste du doigt suit le lien : l'iPhone propose « Ajouter au calendrier »
+  $('ajouter').href = KAREN_URL + '?' + q.toString(); // le toucher suit le lien : l'iPhone propose « Ajouter au calendrier »
 };
 $('autre').onclick = () => { $('enlever').onclick(); $('texte').value = ''; $('resultat').classList.add('cache'); ev = null; window.scrollTo(0, 0); };
 
-$('copier').onclick = async () => {
-  try { await navigator.clipboard.writeText($('json').value); etat('Copié.', 'ok'); }
-  catch (_) { $('json').select(); document.execCommand('copy'); etat('Copié.', 'ok'); }
-};
+/* ---------- Conversation Karen (moteur de Homer v5.4 : envoyer, puis relire aux 3 s; historique) ---------- */
+const SONDE_MS = 3000, MAX_MS = 10 * 60 * 1000, REESSAIS = 4, PJ_MAX = 4, PDF_MAX = 10 * 1024 * 1024;
+const CH = { sid: '', msgs: [], cout: 0, occupe: false, partiel: [], act: '', err: '', dernierCout: '', pj: [], pjPrep: 0, pjMsg: '' };
+const RAPIDES = ['Aide-moi à planifier ma semaine', 'Explique-moi quelque chose', 'J\'ai une idée'];
+function md(src) {
+  const lignes = esc(String(src || '')).replace(/\r/g, '').split('\n');
+  const enLigne = t => t.replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\*)/g, '$1<i>$2</i>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const cellules = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+  let h = '', i = 0;
+  while (i < lignes.length) {
+    const l = lignes[i];
+    if (/^```/.test(l)) { const b = []; i++; while (i < lignes.length && !/^```/.test(lignes[i])) b.push(lignes[i++]); i++; h += '<pre><code>' + b.join('\n') + '</code></pre>'; continue; }
+    if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lignes.length && /^\s*\|?\s*:?-{2,}/.test(lignes[i + 1])) {
+      const tete = cellules(l); i += 2; const corps = [];
+      while (i < lignes.length && /^\s*\|.*\|\s*$/.test(lignes[i])) corps.push(cellules(lignes[i++]));
+      h += '<div class="tab"><table><tr>' + tete.map(c => '<th>' + enLigne(c) + '</th>').join('') + '</tr>'
+        + corps.map(r => '<tr>' + r.map(c => '<td>' + enLigne(c) + '</td>').join('') + '</tr>').join('') + '</table></div>';
+      continue;
+    }
+    const t = /^(#{1,4})\s+(.*)$/.exec(l);
+    if (t) { h += (t[1].length <= 2 ? '<h3>' : '<h4>') + enLigne(t[2]) + (t[1].length <= 2 ? '</h3>' : '</h4>'); i++; continue; }
+    if (/^\s*(---|\*\*\*)\s*$/.test(l)) { h += '<hr>'; i++; continue; }
+    if (/^\s*([-*•]|\d+[.)])\s+/.test(l)) {
+      const ord = /^\s*\d/.test(l); const it = [];
+      while (i < lignes.length && /^\s*([-*•]|\d+[.)])\s+/.test(lignes[i])) { it.push(lignes[i].replace(/^\s*([-*•]|\d+[.)])\s+/, '')); i++;
+        while (i < lignes.length && /^\s{2,}\S/.test(lignes[i]) && !/^\s*([-*•]|\d+[.)])\s+/.test(lignes[i])) it[it.length - 1] += ' ' + lignes[i++].trim(); }
+      h += (ord ? '<ol>' : '<ul>') + it.map(x => '<li>' + enLigne(x) + '</li>').join('') + (ord ? '</ol>' : '</ul>');
+      continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const p = [l]; i++;
+    while (i < lignes.length && lignes[i].trim() && !/^(```|#{1,4}\s|\s*([-*•]|\d+[.)])\s+|\s*\|.*\|\s*$)/.test(lignes[i])) p.push(lignes[i++]);
+    h += '<p>' + enLigne(p.join('<br>')) + '</p>';
+  }
+  return h;
+}
+function rendre(defiler) {
+  const f = $('ch-fil');
+  if (!CH.msgs.length && !CH.occupe) {
+    f.innerHTML = '<div class="vide"><div class="mini">KAREN</div><h2>Salut Loïc</h2><p>Qu\'est-ce que je peux faire pour toi?</p>'
+      + '<div class="chips" id="ch-rapides">' + RAPIDES.map((x, i) => '<button type="button" data-r="' + i + '">' + esc(x) + '</button>').join('') + '</div></div>'
+      + (CH.err ? '<div class="err">' + esc(CH.err) + '</div>' : '');
+  } else {
+    f.innerHTML = CH.msgs.map(m => m.role === 'user' ? '<div class="moi">' + esc(m.content) + '</div>' : '<div class="lui">' + md(m.content) + '</div>').join('')
+      + CH.partiel.map(t => '<div class="lui">' + md(t) + '</div>').join('')
+      + (CH.occupe ? '<div class="act">' + esc('Karen ' + (CH.act || 'réfléchit') + '…') + '</div>' : '')
+      + (CH.dernierCout && !CH.occupe ? '<div class="cout">' + esc(CH.dernierCout) + '</div>' : '')
+      + (CH.err ? '<div class="err">' + esc(CH.err) + '</div>' : '');
+  }
+  $('ch-env').disabled = CH.occupe || CH.pjPrep > 0;
+  if (defiler !== false) requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
+}
+function taille() { document.documentElement.style.setProperty('--saisie', $('ch-saisie').offsetHeight + 'px'); }
+function grandir() {
+  const x = $('ch-texte'), max = window.innerHeight * 0.4;
+  x.style.height = 'auto';
+  const h = x.scrollHeight + (x.offsetHeight - x.clientHeight);
+  x.style.height = Math.min(h, max) + 'px'; x.style.overflowY = h > max ? 'auto' : 'hidden';
+  taille();
+}
+const libPj = p => p.mt === 'application/pdf' ? '📎 ' + p.nom : '📎 photo';
+async function envoyer(texte, pieces) {
+  const t = String(texte || '').trim(), pj = (pieces || []).slice();
+  if ((!t && !pj.length) || CH.occupe) return;
+  $('ch-tiroir').classList.add('cache');
+  CH.msgs.push({ role: 'user', content: [t].concat(pj.map(libPj)).filter(Boolean).join('\n') });
+  CH.occupe = true; CH.partiel = []; CH.act = ''; CH.err = '';
+  rendre();
+  const debut = Date.now(), sid0 = CH.sid;
+  let envoye = false, essais = 0;
+  const echec = e => {
+    if (CH.sid !== sid0 && sid0 && !envoye) return;
+    if (CH.partiel.length) { CH.msgs.push({ role: 'assistant', content: CH.partiel.join('\n\n') }); CH.partiel = []; }
+    else if (!envoye) { CH.msgs.pop(); $('ch-texte').value = t; CH.pj = pj.concat(CH.pj).slice(0, PJ_MAX); rendrePj(); grandir(); }
+    CH.occupe = false; CH.err = (e && e.message) || String(e); rendre(); taille();
+  };
+  let r;
+  try {
+    r = await karen({ action: 'agent_envoyer', sid: CH.sid || undefined, texte: t, pieces: pj.map(p => ({ media_type: p.mt, data: p.data, nom: p.nom })) });
+    if (!r.ok) throw new Error(r.erreur || 'Refusé');
+  } catch (e) { return echec(e); }
+  CH.sid = r.sid; envoye = true;
+  const sid = r.sid;
+  const sonder = async () => {
+    let x;
+    try { x = await karen({ action: 'agent_lire', sid: sid, depuis: r.depuis }); if (!x.ok) throw new Error(x.erreur || 'Erreur'); }
+    catch (e) {
+      if (CH.sid !== sid) return;
+      if (essais < REESSAIS) { const ms = SONDE_MS * Math.pow(2, essais++); CH.act = 'reconnexion (' + essais + '/' + REESSAIS + ')'; rendre(false); setTimeout(sonder, ms); return; }
+      return echec(new Error('Connexion perdue : Karen a peut-être reçu ton message. Rouvre la conversation (☰).'));
+    }
+    if (CH.sid !== sid) return;
+    essais = 0;
+    CH.partiel = (x.textes || []).filter(Boolean);
+    if (!x.fini) {
+      if (Date.now() - debut > MAX_MS) return echec(new Error('Karen travaille encore après 10 min : rouvre cette conversation plus tard (☰).'));
+      CH.act = x.activite || 'réfléchit'; rendre(false); setTimeout(sonder, SONDE_MS); return;
+    }
+    const txt = CH.partiel.join('\n\n').trim(); CH.partiel = [];
+    if (txt) CH.msgs.push({ role: 'assistant', content: txt }); else if (!(x.erreurs || []).length) CH.msgs.push({ role: 'assistant', content: '(réponse vide)' });
+    if ((x.erreurs || []).length) CH.err = 'Erreur : ' + x.erreurs.join(' · ');
+    CH.cout += x.cout || 0;
+    CH.dernierCout = usd(x.cout) + ' · conversation ' + usd(CH.cout) + ' · mois ' + usd(x.mois) + ' / ' + x.plafond + ' $ US';
+    CH.occupe = false; rendre();
+  };
+  setTimeout(sonder, SONDE_MS);
+}
+function rendrePj() {
+  const b = $('ch-pj');
+  b.classList.toggle('cache', !CH.pj.length && !CH.pjPrep && !CH.pjMsg);
+  b.innerHTML = CH.pj.map((p, i) => '<div class="vign">' + (p.mt === 'application/pdf' ? '📄<br>' + esc(p.nom.slice(0, 20))
+      : '<img alt="" src="data:' + esc(p.mt) + ';base64,' + p.data + '">') + '<button type="button" data-pjx="' + i + '" aria-label="Retirer">×</button></div>').join('')
+    + (CH.pjPrep ? '<div class="vign">…</div>' : '') + (CH.pjMsg ? '<span id="ch-pj-msg">' + esc(CH.pjMsg) + '</span>' : '');
+  $('ch-env').disabled = CH.occupe || CH.pjPrep > 0;
+  taille();
+}
+const base64De = blob => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = () => ko(new Error('Fichier illisible')); r.readAsDataURL(blob); });
+async function ajouterPj(fichiers) {
+  CH.pjMsg = '';
+  for (const f of Array.from(fichiers || [])) {
+    if (CH.pj.length + CH.pjPrep >= PJ_MAX) { CH.pjMsg = 'Maximum ' + PJ_MAX + ' pièces par message.'; break; }
+    const mt = String(f.type || '').toLowerCase();
+    if (!/^image\//.test(mt) && mt !== 'application/pdf') { CH.pjMsg = 'Photo ou PDF seulement.'; continue; }
+    CH.pjPrep++; rendrePj();
+    try {
+      if (mt === 'application/pdf') {
+        if (f.size > PDF_MAX) throw new Error('PDF trop gros (10 Mo maximum).');
+        CH.pj.push({ mt: mt, data: await base64De(f), nom: f.name || 'document.pdf' });
+      } else CH.pj.push({ mt: 'image/jpeg', data: (await reduire(f, 1600, 0.85)).split(',')[1], nom: 'photo.jpg' });
+    } catch (e) { CH.pjMsg = e.message; }
+    finally { CH.pjPrep--; rendrePj(); }
+  }
+}
+function nouveau() {
+  if (CH.occupe) return;
+  Object.assign(CH, { sid: '', msgs: [], cout: 0, partiel: [], err: '', dernierCout: '' });
+  $('ch-tiroir').classList.add('cache'); rendre();
+}
+async function historique() {
+  const t = $('ch-tiroir');
+  if (!t.classList.contains('cache')) return t.classList.add('cache');
+  t.classList.remove('cache'); $('ch-liste').innerHTML = '<div class="t">Chargement…</div>';
+  try {
+    const r = await karen({ action: 'agent_fils' }); if (!r.ok) throw new Error(r.erreur);
+    $('ch-liste').innerHTML = (r.fils || []).length ? r.fils.map(x => '<button type="button" data-sid="' + esc(x.sid) + '"' + (x.sid === CH.sid ? ' class="on"' : '') + '>'
+      + esc(x.titre || '(sans titre)') + '<small>' + esc(x.quand || '') + '</small></button>').join('') : '<div class="t">Aucune conversation</div>';
+  } catch (e) { $('ch-liste').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; }
+}
+async function ouvrir(sid) {
+  if (CH.occupe) return;
+  $('ch-tiroir').classList.add('cache');
+  Object.assign(CH, { sid: sid, msgs: [], cout: 0, partiel: [], err: '', dernierCout: '', occupe: true, act: 'recharge la conversation' });
+  rendre();
+  try { const r = await karen({ action: 'agent_relire', sid: sid }); if (!r.ok) throw new Error(r.erreur); if (CH.sid === sid) CH.msgs = r.msgs || []; }
+  catch (e) { CH.err = e.message; }
+  CH.occupe = false; rendre();
+}
+$('ch-saisie').addEventListener('submit', e => {
+  e.preventDefault(); const t = $('ch-texte').value;
+  if ((!t.trim() && !CH.pj.length) || CH.occupe || CH.pjPrep) return;
+  const pj = CH.pj; CH.pj = []; CH.pjMsg = ''; rendrePj();
+  $('ch-texte').value = ''; grandir(); envoyer(t, pj);
+});
+$('ch-texte').addEventListener('input', grandir);
+$('ch-env').addEventListener('mousedown', e => e.preventDefault()); // garde le clavier ouvert au toucher de ↑ (leçon Homer v5.4.1)
+$('ch-env').addEventListener('touchend', e => { e.preventDefault(); if (!$('ch-env').disabled) $('ch-saisie').requestSubmit(); });
+$('ch-joindre').onclick = () => $('ch-photo').click();
+$('ch-photo').addEventListener('change', () => { const l = Array.from($('ch-photo').files || []); $('ch-photo').value = ''; ajouterPj(l); });
+$('ch-pj').addEventListener('click', e => { const b = e.target.closest && e.target.closest('button[data-pjx]'); if (!b) return; CH.pj.splice(Number(b.dataset.pjx), 1); CH.pjMsg = ''; rendrePj(); });
+$('ch-texte').addEventListener('paste', e => { const l = Array.from((e.clipboardData && e.clipboardData.files) || []); if (!l.length) return; e.preventDefault(); ajouterPj(l); });
+$('ch-neuf').onclick = nouveau;
+$('ch-hist').onclick = historique;
+$('ch-liste').addEventListener('click', e => { const b = e.target.closest && e.target.closest('button[data-sid]'); if (b) ouvrir(b.dataset.sid); });
+$('ch-fil').addEventListener('click', e => { const b = e.target.closest && e.target.closest('#ch-rapides button[data-r]'); if (b) envoyer(RAPIDES[Number(b.dataset.r)]); });
+window.addEventListener('resize', taille);
 </script>
 </body>
 </html>
