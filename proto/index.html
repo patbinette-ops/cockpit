@@ -29,7 +29,7 @@
 <textarea id="json" readonly placeholder="L'abonnement apparaîtra ici"></textarea>
 <button id="copier" disabled>Copier l'abonnement</button>
 <script>
-const VAPID_PUBLIQUE = 'BLJHlj-rD00Iv-gD2X-LWsQINIe1NPgE1l5T7cP2u_Sr7mBr2gEhzGpwguVCHQOLBu_WhxjHCRQ7lUjzkEfk4Mw';
+const VAPID_PUBLIQUE = 'BIwHj0RJpeEi5ntZPxVJBg-3jy7uT_X6zoI74rJlUOccndVDaKKn_SCFfMQ2CgxKYxvwPo8NsQcY7Zze5mkCfHU';
 const $ = id => document.getElementById(id);
 const etat = t => { $('etat').textContent = t; };
 
@@ -55,6 +55,8 @@ $('activer').onclick = async () => {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') return etat('Permission refusée (' + perm + ').');
     const reg = await pret;
+    const vieux = await reg.pushManager.getSubscription();
+    if (vieux) await vieux.unsubscribe(); // clé VAPID changée : l'ancien abonnement bloquerait subscribe()
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(VAPID_PUBLIQUE) });
     montrer(sub); etat('Abonné. Copie l\'abonnement et colle-le dans le Retour R2 de T-064.');
   } catch (e) { etat('Erreur : ' + e.message); }
