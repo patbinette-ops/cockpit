@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<title>Cockpit Proto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#04070c">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  body{margin:0;padding:24px;background:#04070c;color:#cfe6f2;font:16px/1.5 system-ui,sans-serif}
+  h1{font-size:20px;color:#00d4ff;margin:0 0 6px}
+  p{color:#7ea6ba;margin:0 0 18px}
+  button{display:block;width:100%;padding:16px;margin:0 0 12px;border:1px solid #00d4ff;border-radius:10px;
+    background:rgba(0,212,255,.12);color:#fff;font:600 17px system-ui,sans-serif}
+  button:disabled{opacity:.4}
+  #etat{min-height:1.5em;margin:6px 0 12px;color:#ffd166}
+  textarea{width:100%;box-sizing:border-box;height:170px;background:#0b1320;color:#cfe6f2;border:1px solid #1d3346;
+    border-radius:8px;font:12px/1.4 ui-monospace,monospace;padding:8px}
+</style>
+</head>
+<body>
+<h1>Cockpit Proto</h1>
+<p>Test Web Push — hors Cockpit. Installe l'app (⋮ → Installer l'application), puis active.</p>
+<button id="activer">Activer les notifications</button>
+<button id="local">Test local (sans serveur)</button>
+<div id="etat"></div>
+<textarea id="json" readonly placeholder="L'abonnement apparaîtra ici"></textarea>
+<button id="copier" disabled>Copier l'abonnement</button>
+<script>
+const VAPID_PUBLIQUE = 'BLJHlj-rD00Iv-gD2X-LWsQINIe1NPgE1l5T7cP2u_Sr7mBr2gEhzGpwguVCHQOLBu_WhxjHCRQ7lUjzkEfk4Mw';
+const $ = id => document.getElementById(id);
+const etat = t => { $('etat').textContent = t; };
+
+function cleVersOctets(b64) {
+  const p = '='.repeat((4 - b64.length % 4) % 4);
+  const s = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(s, ch => ch.charCodeAt(0));
+}
+
+const supporte = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pret = supporte ? navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready) : null;
+if (!supporte) { etat('Ce navigateur ne supporte pas Web Push. Utilise Chrome.'); $('activer').disabled = $('local').disabled = true; }
+
+async function montrer(sub) {
+  $('json').value = JSON.stringify(sub, null, 1);
+  $('copier').disabled = false;
+}
+
+if (pret) pret.then(r => r.pushManager.getSubscription()).then(s => { if (s) { montrer(s); etat('Déjà abonné.'); } });
+
+$('activer').onclick = async () => {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return etat('Permission refusée (' + perm + ').');
+    const reg = await pret;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cleVersOctets(VAPID_PUBLIQUE) });
+    montrer(sub); etat('Abonné. Copie l\'abonnement et colle-le dans le Retour R2 de T-064.');
+  } catch (e) { etat('Erreur : ' + e.message); }
+};
+
+$('local').onclick = async () => {
+  if (Notification.permission !== 'granted') return etat('Active d\'abord les notifications.');
+  const reg = await pret;
+  await reg.showNotification('Cockpit', { body: 'Test local — rouge sur une carte', icon: 'icon-192.png', badge: 'badge-96.png', tag: 'cockpit' });
+  etat('Notification locale envoyée.');
+};
+
+$('copier').onclick = async () => {
+  try { await navigator.clipboard.writeText($('json').value); etat('Copié.'); }
+  catch (_) { $('json').select(); document.execCommand('copy'); etat('Copié (repli).'); }
+};
+</script>
+</body>
+</html>
