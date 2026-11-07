@@ -48,6 +48,14 @@
   .cache{display:none}
   ol{margin:0;padding-left:20px;color:var(--texte)} ol li{margin:4px 0}
   textarea{width:100%;height:110px;background:#030a10;color:var(--doux);border:1px solid var(--bord);border-radius:8px;font:11px/1.3 ui-monospace,monospace;padding:8px}
+  .bouton{display:block;text-align:center;text-decoration:none;padding:15px;margin:0 0 10px;border:1px solid var(--accent);border-radius:12px;
+    background:rgba(79,216,255,.12);color:var(--texte);font:600 17px Rajdhani,system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase}
+  textarea.saisie{height:90px;font:16px/1.4 -apple-system,system-ui,sans-serif;color:var(--texte);margin:0 0 10px}
+  input.adr{font:16px -apple-system,system-ui,sans-serif;letter-spacing:0;text-align:left}
+  #apercu img{display:block;max-width:100%;max-height:220px;margin:0 auto 10px;border-radius:8px}
+  pre#resume{white-space:pre-wrap;font:600 18px/1.4 -apple-system,system-ui,sans-serif;margin:0 0 12px;color:var(--texte)}
+  .petit{font-size:14px;color:var(--ambre);margin:0 0 6px}
+  #etatLire{min-height:1.2em;font-size:15px;color:var(--ambre)}
   footer{margin-top:18px;text-align:center;font-size:11px;color:#4d6a7a}
 </style>
 </head>
@@ -59,10 +67,29 @@
   <div class="puce hud"><i></i>Karen · Petite roue</div>
 </header>
 
-<a class="karen" id="lancer" href="shortcuts://run-shortcut?name=Karen">
+<a class="karen" id="lancer" href="#lire">
   <div class="anneau"><span class="hud">KAREN</span></div>
   <small>Une capture ou une dictée,<br>Karen la met dans ton agenda.</small>
 </a>
+
+<section id="lire" class="cache">
+  <h2 class="hud">Petite roue · nouveau RDV</h2>
+  <label class="bouton" for="photo">📸 Choisir une capture</label>
+  <input id="photo" type="file" accept="image/*" class="cache">
+  <div id="apercu" class="cache"><img id="img" alt=""><button id="enlever" class="second">Enlever la capture</button></div>
+  <textarea id="texte" class="saisie" placeholder="Ou écris-le ici (🎤 du clavier pour dicter) : party chez Max samedi 20 h"></textarea>
+  <button id="go">Lire</button>
+  <div id="resultat" class="cache">
+    <pre id="resume"></pre>
+    <div id="manque" class="cache">
+      <div class="petit" id="manqueTxt"></div>
+      <input id="adresse" class="adr" placeholder="Adresse (optionnel)">
+    </div>
+    <a id="ajouter" class="bouton" href="#">📅 Ajouter à mon calendrier</a>
+    <button id="autre" class="second">Un autre RDV</button>
+  </div>
+  <div id="etatLire"></div>
+</section>
 
 <section id="installer" class="cache">
   <h2 class="hud">Installer l'app</h2>
@@ -87,7 +114,7 @@
   </div>
 </section>
 
-<footer class="hud">Cockpit Loïc v0.1</footer>
+<footer class="hud">Cockpit Loïc v0.2</footer>
 
 <script>
 // URL /exec du projet Apps Script « Karen » (posée après le déploiement de Karen).
@@ -160,6 +187,55 @@ $('tester').onclick = async () => {
   catch (e) { etat('Karen ne répond pas : ' + e.message, 'att'); }
   $('tester').disabled = false;
 };
+
+/* ---------- v0.2 : Petite roue lit la capture ou le texte, puis .ics pour le calendrier (plus de raccourci iOS) ---------- */
+let image = null, ev = null;
+$('lancer').onclick = e => {
+  e.preventDefault();
+  if (!memo.lire('code')) { etat('Active d\'abord les notifications avec le code : il sert aussi de clé pour Karen.', 'att'); $('notifs').scrollIntoView(); return; }
+  $('lire').classList.remove('cache'); $('lire').scrollIntoView({ behavior: 'smooth' });
+};
+function reduire(fichier) { // JPEG 1200 px max : léger à envoyer, assez net pour lire un Snap
+  return new Promise((ok, ko) => {
+    const u = URL.createObjectURL(fichier), im = new Image();
+    im.onload = () => { const r = Math.min(1, 1200 / Math.max(im.width, im.height)); const c = document.createElement('canvas');
+      c.width = Math.round(im.width * r); c.height = Math.round(im.height * r); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', 0.8)); };
+    im.onerror = () => ko(new Error('Image illisible')); im.src = u;
+  });
+}
+$('photo').onchange = async () => {
+  const f = $('photo').files[0]; if (!f) return;
+  try { image = await reduire(f); $('img').src = image; $('apercu').classList.remove('cache'); $('etatLire').textContent = ''; }
+  catch (e) { $('etatLire').textContent = e.message; }
+};
+$('enlever').onclick = () => { image = null; $('photo').value = ''; $('apercu').classList.add('cache'); };
+$('go').onclick = async () => {
+  const texte = $('texte').value.trim();
+  if (!image && !texte) { $('etatLire').textContent = 'Choisis une capture ou écris quelque chose.'; return; }
+  $('go').disabled = true; $('etatLire').textContent = 'Karen lit…'; $('resultat').classList.add('cache');
+  try {
+    const corps = { code: memo.lire('code') || '' }; if (image) corps.image = image; else corps.texte = texte;
+    const r = await karen(corps);
+    if (!r.ok) throw new Error(r.erreur || 'Erreur');
+    $('etatLire').textContent = '';
+    $('resume').textContent = r.resume; $('resultat').classList.remove('cache');
+    ev = r.trouve ? r : null;
+    $('ajouter').classList.toggle('cache', !ev);
+    $('manque').classList.toggle('cache', !(ev && r.adresse_manque));
+    if (ev && r.adresse_manque) $('manqueTxt').textContent = 'Adresse de ' + (r.nom_carnet || r.lieu) + '? Karen s\'en souviendra.';
+    $('adresse').value = '';
+  } catch (e) { $('etatLire').textContent = 'Karen : ' + e.message; }
+  $('go').disabled = false;
+};
+$('ajouter').onclick = async e => {
+  if (!ev) return e.preventDefault();
+  const adr = $('adresse').value.trim();
+  if (ev.adresse_manque && adr.length >= 5) karen({ code: memo.lire('code') || '', action: 'carnet', nom: ev.nom_carnet || ev.lieu, adresse: adr }).catch(() => {});
+  const q = new URLSearchParams({ ics: '1', t: ev.titre, d: ev.debut, f: ev.fin, j: ev.journee ? '1' : '0', l: adr || ev.adresse || ev.lieu || '' });
+  $('ajouter').href = KAREN_URL + '?' + q.toString(); // le geste du doigt suit le lien : l'iPhone propose « Ajouter au calendrier »
+};
+$('autre').onclick = () => { $('enlever').onclick(); $('texte').value = ''; $('resultat').classList.add('cache'); ev = null; window.scrollTo(0, 0); };
 
 $('copier').onclick = async () => {
   try { await navigator.clipboard.writeText($('json').value); etat('Copié.', 'ok'); }
