@@ -1,7 +1,7 @@
 // Service worker de la coquille Cockpit.
 // Garde seulement la coquille (page, icônes) pour un démarrage instantané.
 // Le contenu de Cockpit (Google) n'est jamais mis en cache : il vient toujours en direct.
-const CACHE = 'cockpit-coquille-v2';
+const CACHE = 'cockpit-coquille-v3';
 const COQUILLE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './favicon.png'];
 
 self.addEventListener('install', e => {
@@ -23,4 +23,28 @@ self.addEventListener('fetch', e => {
       .then(r => { const copie = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copie)); return r; })
       .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('./index.html')))
   );
+});
+
+// Cockpit v5.2.0 : notifications envoyées par Apps Script (Web Push chiffré). Charge utile JSON : { titre, texte, tag, url }.
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { texte: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titre || 'Cockpit', {
+    body: d.texte || '',
+    icon: 'icon-192.png',
+    badge: 'badge-96.png',
+    tag: d.tag || 'cockpit',
+    renotify: true,
+    data: { url: d.url || './' }
+  }));
+});
+
+// Clic : ramène Cockpit au premier plan (ou l'ouvre).
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const cible = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    for (const c of cs) if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus();
+    return self.clients.openWindow(cible);
+  }));
 });

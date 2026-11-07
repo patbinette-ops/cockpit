@@ -59,6 +59,31 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => { /* la coquille fonctionne sans */ });
   }
+
+  // Notifications (Cockpit v5.2.0) : la page Cockpit (iframe Google) ne peut pas demander la permission; elle envoie ici la clé
+  // publique VAPID sur le geste « Activer », la coquille demande la permission, s'abonne et renvoie l'abonnement à la page.
+  const ORIGINE_APP = /^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/;
+  function octets(b64) {
+    const s = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(s, ch => ch.charCodeAt(0));
+  }
+  window.addEventListener('message', async ev => {
+    if (!ORIGINE_APP.test(ev.origin) || !ev.data || ev.data.cockpit !== 'push-activer' || typeof ev.data.cle !== 'string') return;
+    const repondre = m => ev.source && ev.source.postMessage(m, ev.origin);
+    try {
+      if (!('serviceWorker' in navigator && 'PushManager' in window)) throw new Error('navigateur sans Web Push (utilise Chrome)');
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') throw new Error('permission ' + (perm === 'denied' ? 'refusée (Paramètres Android > Apps > Cockpit > Notifications)' : 'non accordée'));
+      const reg = await navigator.serviceWorker.ready;
+      const cle = octets(ev.data.cle);
+      let sub = await reg.pushManager.getSubscription();
+      const meme = sub && sub.options && sub.options.applicationServerKey
+        && new Uint8Array(sub.options.applicationServerKey).join() === cle.join();
+      if (sub && !meme) { await sub.unsubscribe(); sub = null; }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: cle });
+      repondre({ cockpit: 'push-abo', abo: sub.toJSON() });
+    } catch (e) { repondre({ cockpit: 'push-erreur', message: String(e && e.message || e) }); }
+  });
 </script>
 </body>
 </html>
