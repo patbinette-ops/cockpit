@@ -40,7 +40,7 @@
 <script>
   // Seule source de l'app : la web app Apps Script (accès réservé au compte du propriétaire).
   const APP = 'https://script.google.com/macros/s/AKfycbzI0VaOtgQOfQQyDOyDWqbg3pBdzs1-cXBP_0ZOoA8NpTm9hIkooudYNaYHUThLFN16/exec';
-  const ONGLETS = ['etat', 'decisions', 'idees', 'claude'];
+  const ONGLETS = ['etat', 'decisions', 'idees', 'claude', 'homer', 'carte', 'todo', 'courriels']; // v5.5.0 : sans ?v=, Cockpit ouvre sur Homer; « carte » = la carte de l'écurie
 
   const v = new URLSearchParams(location.search).get('v');
   const src = APP + (ONGLETS.indexOf(v) >= 0 ? '?v=' + v : '');
